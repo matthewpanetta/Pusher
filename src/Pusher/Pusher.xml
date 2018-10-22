@@ -8,13 +8,10 @@
 	</icon>
 
     <properties>
-		<property key="pusherAPIKey" type="attribute">
+		<property key="pusherAPIKey" type="string">
             <caption>API Key</caption>
             <category>Behavior</category>
             <description>API Key used to open a connection to Pusher.</description>
-            <attributeTypes>
-                <attributeType name="String"/>
-            </attributeTypes>
         </property>
         <property key="cluster" type="enumeration" defaultValue="mt1">
             <caption>cluster</caption>
@@ -27,15 +24,24 @@
                 <enumerationValue key="mt1">us-east-1</enumerationValue>
             </enumerationValues>
         </property>
-		<property key="ignored1" type="object" isList="true" required="false">
+		<property key="channels" type="object" isList="true" required="false">
             <caption>Channels</caption>
             <category>Data</category>
             <description>List of channels that you want to listen to.</description>
             <properties>
-				<property key="channelName" type="string">
+				<property key="channelName" type="attribute">
 					<caption>Channel name</caption>
 					<category>Data</category>
 					<description>Name of the channel to which to listen to.</description>
+                    <attributeTypes>
+                        <attributeType name="AutoNumber" />
+                    </attributeTypes>
+				</property>
+                <property key="mfName" type="microflow">
+					<caption>Microflow name</caption>
+					<category>Data</category>
+					<description>Name of the microflow to call when we hear an event.</description>
+                    <returnType type="Void" />
 				</property>
             </properties>
         </property>

@@ -1,4 +1,4 @@
-// Generated on 2017-10-03 using generator-mendix 2.2.3 :: git+https://github.com/mendix/generator-mendix.git
+// Generated on 2018-09-18 using generator-mendix 2.2.3 :: git+https://github.com/mendix/generator-mendix.git
 /*jshint -W069,-W097*/
 "use strict";
 
@@ -20,11 +20,20 @@ var gulp = require("gulp"),
     intercept = require("gulp-intercept"),
     argv = require("yargs").argv,
     widgetBuilderHelper = require("widgetbuilder-gulp-helper"),
-    jsValidate = require("gulp-jsvalidate");
+    jsValidate = require("gulp-jsvalidate"),
+    streamCombiner = require("stream-combiner");
 
 var pkg = require("./package.json"),
     paths = widgetBuilderHelper.generatePaths(pkg),
     xmlversion = widgetBuilderHelper.xmlversion;
+
+var workingAppPaths = ['C:\\Projects\\PusherDemo1-main\\widgets'];
+
+function dest(paths) {
+    return streamCombiner(paths.map(function (path) {
+        return gulp.dest(path);
+    }));
+};
 
 gulp.task("default", ['build'], function() {
     gulp.watch("./src/**/*", ["compress"]);
@@ -43,7 +52,8 @@ gulp.task("compress", ["clean"], function () {
     return gulp.src("src/**/*")
         .pipe(zip(pkg.name + ".mpk"))
         .pipe(gulp.dest(paths.TEST_WIDGETS_FOLDER))
-        .pipe(gulp.dest("dist"));
+        .pipe(gulp.dest("dist"))
+        .pipe(dest(workingAppPaths));
 });
 
 gulp.task("copy:js", function () {

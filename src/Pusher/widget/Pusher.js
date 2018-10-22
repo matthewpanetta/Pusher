@@ -49,6 +49,7 @@ define([
         // Parameters configured in the Modeler.
         pusherAPIKey:"",
         cluster:"",
+        channels: [],
 
         // Internal variables. Non-primitives created in the prototype are shared between all widget instances.
         _handles: null,
@@ -75,9 +76,9 @@ define([
             if (this.readOnly || this.get("disabled") || this.readonly) {
                 this._readOnly = true;
             }
-            dojoArray.forEach(this.ignored1, dojoLang.hitch(this, function (dataListener) {
-                this._channels.push([dataListener.channelName]);
-            }));
+            // dojoArray.forEach(this.ignored1, dojoLang.hitch(this, function (dataListener) {
+            //     this._channels.push([dataListener.channelName]);
+            // }));
             this._updateRendering();
 
         },
@@ -123,38 +124,88 @@ define([
             logger.debug(this.id + "._setupPusher");
             
             // Throw an error if an empty apiKey is provided
-            if(!(this._contextObj && this._contextObj.get(this.pusherAPIKey) !== "")){
-                logger.error(this.id + ": 'API key' must be specified.");
-                return;
-            }
+            // if(!(this._contextObj && this._contextObj.get(this.pusherAPIKey) !== "")){
+            //     logger.error(this.id + ": 'API key' must be specified.");
+            //     return;
+            // }
             // Do nothing if apiKey did not change.
-            if(this._apiKey === this._contextObj.get(this.pusherAPIKey)){
-                return;
-            }
-            this._apiKey = this._contextObj.get(this.pusherAPIKey);
+            // if(this._apiKey === this._contextObj.get(this.pusherAPIKey)){
+            //     return;
+            // }
+            // this._apiKey = this._contextObj.get(this.pusherAPIKey);
             // close the current connection, if it exists.
             if (this._socket && typeof this._socket.disconnect === "function"){
                 this._socket.disconnect();
             }
 
-            this._socket = new Pusher(this._apiKey,{
+            this._socket = new Pusher(this.pusherAPIKey,{
                 encrypted: true,
-                cluster: this.cluster
-            });
-            this._channels.forEach(dojoLang.hitch(this, function (channel) {
-                var _channel = this._socket.subscribe(channel[0]);
+                cluster: 'us2'
+            }); 
+
+            this.channels.forEach((channel) => {
+                var self2 = this;
+                var mfName = channel.mfName;
+                var channelName = this._contextObj.get(channel.channelName).toString();
+                var _channel = this._socket.subscribe(channelName);
+            
                 _channel.bind("refresh_object", function(data) {
                 //Implement logic here to refresh single object
-                    //console.log(data);
-                    mx.data.updateInCache(data);
-                    mx.data.update({guid: data.guid});
-                });
+                    console.log(data);
+                    // mx.data.updateInCache(data);
+                    // mx.data.update({guid: data.guid});
+
+                    mx.data.get({
+                        guid: data.guid,
+                        callback: function(obj) {
+                            mx.data.get({
+                                xpath: "//" + obj.getEntity() + "[id='" + data.guid + "']",
+                                callback: function(obj) {
+                                    console.log(obj);
+                                    //Rollback4Lyfe
+                                    /*mx.data.rollback({
+                                        mxobj: obj,
+                                        callback: function() {
+                                            console.log("The object was rollbacked");
+                                        },
+                                        error: function(e) {
+                                            console.error("Could not rollback object:", e);
+                                        }
+                                    });*/
+                                    mx.data.updateInCache(obj[0].jsonData);
+
+                                    mx.data.update2({
+                                        guid: data.guid
+                                    });
+                                    mx.data.update2({
+                                        entity: obj[0].getEntity()
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                }.bind(self2));
                 _channel.bind("refresh_object_class", function(data) {
                 //Implement logic here to refresh an object class
-                    //console.log(data);
+                    console.log(data);
                     mx.data.update({entity: data.objectType});
-                });       
-            }));   
+                });
+                
+                _channel.bind('call_microflow', function (data) {
+                    console.log(data);
+                    mx.data.action({
+                        params: {
+                            applyto: 'selection',
+                            actionname: mfName,
+                            guids: [this._contextObj.getGuid()]
+                        },
+                        callback: function (result) {
+                            console.log(result);
+                        }
+                    });
+                }.bind(self2));
+            });
         },
 
         // Rerender the interface.

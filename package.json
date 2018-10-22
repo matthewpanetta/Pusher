@@ -6,6 +6,7 @@
   "author": "Pieter van de Braak",
   "private": true,
   "dependencies": {
+    "stream-combiner": "^0.2.2"
   },
   "devDependencies": {
     "del": "^2.2.2",
